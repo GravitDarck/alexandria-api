@@ -5,9 +5,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require&reWriteBatchedInserts=true
-    username: app_user
-    password: M8V<0]W|Lz8$
+    url: ${DB_URL:${DATABASE_URL:}}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -24,7 +24,7 @@ spring:
       hibernate.order_updates: true
 
   flyway:
-    enabled: false                # deixe true SE já tiver migrations em src/main/resources/db/migration
+    enabled: true                # deixe true SE já tiver migrations em src/main/resources/db/migration
     locations: classpath:db/migration
     baseline-on-migrate: true
 
