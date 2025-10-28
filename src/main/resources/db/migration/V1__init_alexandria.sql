@@ -6,11 +6,12 @@
 ------------------------------
 -- PREPARAÇÃO
 ------------------------------
+
+create schema if not exists alexandria;
+set local search_path = alexandria, public;
+
 create extension if not exists pgcrypto; -- para gen_random_uuid()
 create extension if not exists btree_gist;
-
--- Schema (use 'public' no Supabase por simplicidade)
-set search_path to public;
 
 ------------------------------
 -- TIPOS ENUMERADOS
@@ -419,9 +420,10 @@ create table if not exists movimentacoes_estoque (
   tipo            tipo_mov_estoque not null,
   quantidade      integer not null check (quantidade > 0),
   motivo          text,
-  origem_venda_item_id uuid references itens_venda(id),            -- FK adicionado após itens_venda
-  origem_dev_cli_item_id uuid references itens_devolucao_cliente(id), -- FK após criação
-  origem_dev_forn_id uuid,                                         -- referenciará devolucoes_fornecedores
+  -- FKs opcionais: serão adicionadas depois que as tabelas existirem
+  origem_venda_item_id      uuid, -- FK adicionada após criação de itens_venda
+  origem_dev_cli_item_id    uuid, -- FK adicionada após criação de itens_devolucao_cliente
+  origem_dev_forn_id        uuid, -- FK adicionada após criação de devolucoes_fornecedores
   criado_em       timestamptz not null default now()
 );
 create index if not exists idx_mov_estoque_livro on movimentacoes_estoque(livro_id);
@@ -432,7 +434,7 @@ create table if not exists reservas_estoque (
   id              uuid primary key default gen_random_uuid(),
   livro_id        uuid not null references livros(id) on delete restrict,
   local_id        uuid not null references locais_estoque(id) on delete restrict,
-  venda_id        uuid, -- preenchido quando associado a uma venda
+  venda_id        uuid, -- preenchido quando associado a uma venda (FK adicionada depois)
   quantidade      integer not null check (quantidade > 0),
   status          status_reserva not null default 'ATIVA',
   expira_em       timestamptz,
@@ -711,7 +713,7 @@ alter table reservas_estoque
   add constraint fk_reservas_venda
   foreign key (venda_id) references vendas(id) on delete set null;
 
--- Referências de movimentações às linhas existentes (já adicionadas acima para itens/ devoluções)
+-- Referências de movimentações às linhas existentes (adicionadas agora)
 alter table movimentacoes_estoque
   add constraint fk_mov_est_item_venda
   foreign key (origem_venda_item_id) references itens_venda(id);
