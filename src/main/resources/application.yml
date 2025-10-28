@@ -39,6 +39,7 @@ spring:
     locations: classpath:db/migration
     schemas: ${DB_SCHEMA:alexandria}
     baseline-on-migrate: true
+    create-schemas: false
 
 management:
   endpoints:
