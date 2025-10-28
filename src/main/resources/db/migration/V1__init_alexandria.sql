@@ -7,6 +7,7 @@
 -- PREPARAÇÃO
 ------------------------------
 create extension if not exists pgcrypto; -- para gen_random_uuid()
+create extension if not exists btree_gist;
 
 -- Schema (use 'public' no Supabase por simplicidade)
 set search_path to public;
