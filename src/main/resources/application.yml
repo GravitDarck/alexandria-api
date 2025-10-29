@@ -39,6 +39,8 @@ spring:
     locations: classpath:db/migration
     table: flyway_schema_history
     baseline-on-migrate: true
+    baseline-version: 1
+    clean-disabled: true
     create-schemas: false
     schemas: public
     default-schema: public
