@@ -1,12 +1,8 @@
 -- V2__rls_enable_all.sql
--- Habilita RLS em todas as tabelas e ajusta privilégios/MVs p/ Supabase.
--- Sem SET ROLE. Compatível com deploy via Flyway.
-
 set search_path to public;
 
 ------------------------------------------------------------
--- 0) Função de refresh dos dashboards (SEGURITY DEFINER)
---    Sem CONCURRENTLY (não é permitido dentro de função/transação)
+-- 0) Função de refresh (segura mesmo sem as MVs existentes)
 ------------------------------------------------------------
 create or replace function refresh_dashboards_concurrently()
 returns void
@@ -14,31 +10,42 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  r record;
 begin
-  -- CONCURRENTLY não pode ser usado dentro de função (transação ativa).
-  refresh materialized view mv_dash_vendas_dia;
-  refresh materialized view mv_top_livros;
-  refresh materialized view mv_estoque_baixo;
-  refresh materialized view mv_ticket_medio;
+  for r in
+    select schemaname, matviewname
+    from pg_matviews
+    where schemaname = 'public'
+      and matviewname in ('mv_dash_vendas_dia','mv_top_livros','mv_estoque_baixo','mv_ticket_medio')
+  loop
+    execute format('refresh materialized view %I.%I', r.schemaname, r.matviewname);
+  end loop;
 end
 $$;
 
 grant execute on function refresh_dashboards_concurrently() to authenticated;
-
--- Garantir visibilidade das MVs aos usuários autenticados
 grant usage on schema public to authenticated;
-grant select on table mv_dash_vendas_dia to authenticated;
-grant select on table mv_top_livros to authenticated;
-grant select on table mv_estoque_baixo to authenticated;
-grant select on table mv_ticket_medio to authenticated;
+
+-- Concede SELECT nas MVs somente se elas existirem
+do $$
+declare
+  r record;
+begin
+  for r in
+    select schemaname, matviewname
+    from pg_matviews
+    where schemaname = 'public'
+      and matviewname in ('mv_dash_vendas_dia','mv_top_livros','mv_estoque_baixo','mv_ticket_medio')
+  loop
+    execute format('grant select on table %I.%I to authenticated', r.schemaname, r.matviewname);
+  end loop;
+end
+$$ language plpgsql;
 
 ------------------------------------------------------------
--- 1) Habilitar RLS + políticas (acesso total p/ role 'authenticated')
---    Padrão:
---      SELECT: using (true)
---      INSERT: with check (true)
---      UPDATE: using (true) with check (true)
---      DELETE: using (true)
+-- 1) Habilitar RLS + políticas (para role 'authenticated')
+--    (mantive igual ao seu V2 anterior)
 ------------------------------------------------------------
 
 -- Login / RBAC / Sessões / Auditoria
