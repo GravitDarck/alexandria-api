@@ -37,10 +37,13 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-    schemas: ${DB_SCHEMA:alexandria}
     table: flyway_schema_history
     baseline-on-migrate: true
     create-schemas: false
+    schemas: public
+    default-schema: public
+    validate-on-migrate: true
+    out-of-order: false
 
 management:
   endpoints:
