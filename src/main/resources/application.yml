@@ -1,60 +1,33 @@
-# src/main/resources/application.yml
 server:
   port: ${PORT:8080}
-  forward-headers-strategy: native
 
 spring:
-  application:
-    name: alexandria-api
-
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USER:alexapi}
+    url: ${DB_URL}       # ex: jdbc:postgresql://db.supabase.co:6543/postgres?sslmode=require
+    username: ${DB_USER} # ex: alexapi
     password: ${DB_PASSWORD}
-    hikari:
-      maximum-pool-size: ${DB_POOL_MAX:5}
-      minimum-idle: 0
-      initialization-fail-timeout: -1
-      data-source-properties:
-        # Mantém compatibilidade com pgbouncer (Supabase pooled):
-        sslmode: ${DB_SSLMODE:require}
-        reWriteBatchedInserts: true
-        prepareThreshold: 0
-
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     properties:
-      hibernate.default_schema: ${DB_SCHEMA:alexandria}
+      hibernate.jdbc.time_zone: UTC
       hibernate.jdbc.batch_size: 50
       hibernate.order_inserts: true
       hibernate.order_updates: true
-
-  jackson:
-    time-zone: America/Sao_Paulo
-
-flyway:
+  flyway:
     enabled: true
-    locations: classpath:/db/migration
-    default-schema: public
-    schemas: [public, alexandria]
     baseline-on-migrate: true
-    baseline-version: 1
-    clean-disabled: true
+    locations: classpath:db/migration
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      probes:
-        enabled: true
+logging:
+  level:
+    org.springframework.security: INFO
+    org.flywaydb: INFO
 
-# Propriedades customizadas (ajuste conforme seu código usa)
 app:
-  security:
-    jwt:
-      secret: ${JWT_SECRET}
+  jwt:
+    # gere uma chave forte (≥256 bits). Exemplo: openssl rand -base64 48
+    secret: ${JWT_SECRET}
+    issuer: alexandria-api
+    access-token-minutes: 60
